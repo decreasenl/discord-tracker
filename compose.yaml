@@ -1,0 +1,25 @@
+name: discord-tracker
+services:
+  bot:
+    build: .
+    init: true
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      SQLITE_PATH: /data/community.sqlite3
+    volumes:
+      - bot-data:/data
+    stop_grace_period: 30s
+    healthcheck:
+      test: ["CMD", "python", "-m", "discord_tracker.health"]
+      interval: 30s
+      timeout: 5s
+      start_period: 60s
+      retries: 3
+    logging:
+      driver: local
+      options:
+        max-size: "10m"
+        max-file: "3"
+volumes:
+  bot-data:
