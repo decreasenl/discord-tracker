@@ -275,6 +275,18 @@ Creation follows the [Wise Old Man competition API](https://docs.wiseoldman.net/
 
 ## Run and test locally
 
+For an existing production deployment using the `discord-tracker-prod` Compose
+project, rebuild and recreate its containers from the current checkout with:
+
+```bash
+sh scripts/update-production.sh
+```
+
+The script runs `docker compose -p discord-tracker-prod up -d --build
+--force-recreate` from the repository directory. It does not pull Git changes or
+change storage configuration. Ensure any configured NVMe storage is mounted
+before running it. Do not use it for a deployment with a different project name.
+
 With Python 3.12:
 
 ```bash

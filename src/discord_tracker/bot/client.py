@@ -60,8 +60,9 @@ class Tracker(discord.Client):
                 await interaction.followup.send(message, ephemeral=True)
             else:
                 await interaction.response.send_message(message, ephemeral=True)
-        except discord.HTTPException:
+        except discord.HTTPException as e:
             log.error('Unable to deliver command error response')
+            log.exception(e)
 
     async def setup_hook(self):
         candidate = self.settings or bootstrap_settings()
