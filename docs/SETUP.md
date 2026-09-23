@@ -9,9 +9,11 @@ commands, audit browsing, manual rank overrides, scheduled SOTW/BOTW polls,
 weekly recurrence, voting, winner selection, Wise Old Man competition creation
 and manager recovery commands.
 
-Leaderboard scoring and automatic ranks are intentionally disabled until the
-community supplies rules. Live Docker/Discord/Wise Old Man verification is still
-required before production use.
+Automatic E-Scapers ranks are implemented using calendar membership duration
+and previous-month XP activity. Configure joining dates and review
+[RANKS.md](RANKS.md) before enabling production evaluation. Leaderboard scoring
+remains disabled. Live Docker/Discord/Wise Old Man verification is still required
+before production use.
 The other product documents describe the target application, not a claim that
 all features already exist. This milestone supports one OSRS account per member
 and manager-created links only. Existing OSRS players must be tracked in Wise
@@ -184,6 +186,11 @@ temporarily open bot access to everyone.
 - `/audit` shows the latest eight actions privately.
 - `/rank-set`, `/rank-clear` and `/rank` manage manual clan rank overrides with
   optional expiry. They do not change Discord roles or in-game ranks.
+- `/member-joined` records a member's actual clan joining date.
+- `/rank-rules` displays the file-based rules and daily schedule.
+- `/rank-preview` explains an individual decision without applying it.
+- `/rank-evaluate` applies the same evaluation used by the daily scheduler.
+  See [RANKS.md](RANKS.md) for activity gates, protected staff and override behavior.
 
 ## Competition commands
 

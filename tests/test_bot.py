@@ -16,7 +16,8 @@ async def test_register_command_contract(tmp_path):
         'status', 'stats', 'member', 'link', 'refresh', 'diagnostics',
         'archive', 'restore', 'relink', 'settings', 'set-role', 'set-timezone', 'set-group', 'audit',
         'event-config', 'event-schedule', 'vote', 'competition', 'events', 'event-cancel', 'event-winner', 'event-reconcile', 'event-retry',
-        'rank', 'rank-set', 'rank-clear', 'set-alert-channel', 'test-alert'}
+        'rank', 'rank-set', 'rank-clear', 'rank-preview', 'rank-evaluate', 'rank-rules', 'member-joined',
+        'set-alert-channel', 'test-alert'}
     for command in bot.tree.get_commands(guild=guild):
         assert command.to_dict(bot.tree)['name'] == command.name
     await bot.wom.close()

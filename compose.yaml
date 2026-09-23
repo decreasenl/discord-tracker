@@ -9,6 +9,7 @@ services:
       SQLITE_PATH: /data/community.sqlite3
     volumes:
       - bot-data:/data
+      - ./config/ranks.yaml:/app/config/ranks.yaml:ro
     stop_grace_period: 30s
     healthcheck:
       test: ["CMD", "python", "-m", "discord_tracker.health"]

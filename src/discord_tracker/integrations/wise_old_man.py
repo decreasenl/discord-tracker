@@ -1,5 +1,6 @@
 import asyncio
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
+from datetime import UTC
 import httpx
 
 
@@ -51,6 +52,19 @@ class WiseOldMan:
 
     async def close(self):
         await self.client.aclose()
+
+    async def group_gains(self, group_id, start, end):
+        query = urlencode({'startDate': start.astimezone(UTC).isoformat(),
+                           'endDate': end.astimezone(UTC).isoformat()})
+        rows = await self.request('GET', f'groups/{group_id}/bulk-gained?{query}', expect_list=True)
+        result = {}
+        for row in rows:
+            player = row.get('player') if isinstance(row, dict) else None
+            player_id = player.get('id') if isinstance(player, dict) else None
+            if type(player_id) is not int or player_id in result:
+                raise IntegrationError('Wise Old Man returned invalid or duplicate group players')
+            result[player_id] = row
+        return result
 
     async def group_competitions(self, group_id):
         records = {}

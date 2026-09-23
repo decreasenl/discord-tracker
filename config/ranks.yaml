@@ -1,0 +1,16 @@
+# Source of truth for automatic application ranks. Restart after editing.
+version: 1
+enabled: true
+daily_at: "03:00"
+activity:
+  period: previous_calendar_month
+  metric: overall_xp
+  minimum_gain: 1
+protected_ranks: [Moderator, Captain, Lieutenant, Commander]
+ranks:
+  - {name: Squire, months: 1}
+  - {name: Striker, months: 3}
+  - {name: Ninja, months: 6}
+  - {name: Inquisitor, months: 9}
+  - {name: Expert, months: 12}
+  - {name: Paladin, months: 24}

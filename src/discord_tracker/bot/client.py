@@ -11,6 +11,9 @@ from discord_tracker.services.members import Members
 from discord_tracker.services.competitions import Competitions
 from discord_tracker.jobs.competitions import CompetitionWorker
 from discord_tracker.services.alerts import Alerts
+from discord_tracker.rank_rules import RankRules
+from discord_tracker.services.ranks import Ranks
+from discord_tracker.jobs.ranks import RankWorker
 
 log = logging.getLogger(__name__)
 
@@ -33,7 +36,11 @@ class Tracker(discord.Client):
         self.settings = db.settings()
         self.tree = app_commands.CommandTree(self)
         self.tree.on_error = self.command_error
+        rules = RankRules.load()
         self.wom = WiseOldMan()
+        self.ranks = Ranks(db, self.wom, rules)
+        self.rank_worker = RankWorker(self)
+        self.rank_task = None
         self.members_service = Members(db, self.wom)
         self.heartbeat = None
         self.ready_for_commands = False
@@ -73,6 +80,7 @@ class Tracker(discord.Client):
         self.ready_for_commands = True
         self.heartbeat = asyncio.create_task(self.write_health())
         self.competition_task = asyncio.create_task(self.competition_worker.run())
+        self.rank_task = asyncio.create_task(self.rank_worker.run())
 
     async def authorize(self, interaction, manager=False):
         if not self.ready_for_commands or not isinstance(interaction.user, discord.Member):
@@ -199,11 +207,15 @@ class Tracker(discord.Client):
         while True:
             self.db.connection.execute('SELECT 1')
             worker_alive = self.competition_task is not None and not self.competition_task.done()
+            worker_alive = worker_alive and self.rank_task is not None and not self.rank_task.done()
             path.write_text(json.dumps({'at': time.time(), 'connected': self.is_ready() and worker_alive}))
             await asyncio.sleep(10)
 
     async def close(self):
         self.ready_for_commands = False
+        if self.rank_task:
+            self.rank_task.cancel()
+            await asyncio.gather(self.rank_task, return_exceptions=True)
         if self.competition_task:
             self.competition_task.cancel()
             await asyncio.gather(self.competition_task, return_exceptions=True)

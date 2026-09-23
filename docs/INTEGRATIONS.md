@@ -10,6 +10,14 @@ documentation during implementation.
 The initial application integrates only with Discord and Wise Old Man. Direct
 integration with the RuneScape Hiscores is out of scope.
 
+Automatic ranks read `GET /groups/:id/bulk-gained` with explicit UTC `startDate`
+and `endDate` for the previous community calendar month. This endpoint returns
+the full group without pagination; records are matched to linked players by ID.
+Only valid `overall` XP observations qualify for the activity gate. There are no
+upstream rank writes or automatic snapshot refreshes in this workflow. See
+[RANKS.md](RANKS.md) and the
+[official group gains contract](https://docs.wiseoldman.net/api/groups/group-endpoints#get-group-bulk-gains).
+
 ## Ownership of Information
 
 | Information | Authoritative system |

@@ -62,7 +62,8 @@ members, identities, ranks, events and audit records.
 The persistent model should cover at least:
 
 - Members and linked external identities.
-- Rank definitions, evaluations and manual overrides.
+- Rank evaluations, assigned/calculated ranks and manual overrides. Rank
+  definitions themselves live in the version-controlled `config/ranks.yaml`.
 - Activity snapshots and leaderboard periods/results.
 - Event definitions, polls, candidates, votes or final poll totals, and event
   state.
@@ -110,9 +111,13 @@ where needed for reproducibility.
 
 ## Configurable Rules
 
-Rank and leaderboard rules should be expressed behind stable interfaces. The
-initial implementation may use ordinary Python strategies configured by stored
-parameters; a general-purpose rules language is not required.
+`rank_rules.py` validates `config/ranks.yaml` with PyYAML and computes calendar
+milestones. `services/ranks.py` evaluates activity, applies overrides and stores
+decisions. `jobs/ranks.py` runs the persisted daily schedule. `bot/ranks.py`
+provides private previews, manual evaluation, joining dates and overrides.
+The WOM adapter retrieves group bulk gains; the evaluator validates total-XP
+evidence. No general-purpose rules language or external role synchronization is
+used. Leaderboard scoring remains a separate, unimplemented feature.
 
 Every calculated result should include an explanation or component breakdown.
 Rule versions or sufficient input data must be retained when needed to explain

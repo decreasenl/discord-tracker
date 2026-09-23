@@ -24,6 +24,13 @@ files. The initial implementation uses `discord.py`, `httpx`, Python `sqlite3`
 and transactional SQLite schema versions. An asyncio worker handles persisted
 competition schedules every 15 seconds.
 
+Automatic application ranks use the read-only `config/ranks.yaml` policy and a
+daily worker (03:00 community time by default). SQLite schema version 6 adds
+clan joining dates, assigned/calculated ranks and evaluation history. Back up
+SQLite before upgrading and back up the policy file alongside it. See
+[RANKS.md](RANKS.md) for a preview-first rollout and data prerequisites.
+The health check monitors both the competition and rank worker tasks.
+
 ## Deployment Model
 
 Production runs as one application container and one application process. That

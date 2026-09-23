@@ -9,14 +9,14 @@ from discord_tracker.bot.client import Tracker
 
 async def run(config):
     db = Database(config.database)
-    bot = Tracker(config, db)
-    loop = asyncio.get_running_loop()
-    for sig in (signal.SIGTERM, signal.SIGINT):
-        try:
-            loop.add_signal_handler(sig, lambda: asyncio.create_task(bot.close()))
-        except NotImplementedError:
-            pass  # Windows console cancellation is handled by asyncio.run.
     try:
+        bot = Tracker(config, db)
+        loop = asyncio.get_running_loop()
+        for sig in (signal.SIGTERM, signal.SIGINT):
+            try:
+                loop.add_signal_handler(sig, lambda: asyncio.create_task(bot.close()))
+            except NotImplementedError:
+                pass  # Windows console cancellation is handled by asyncio.run.
         async with bot:
             await bot.start(config.token)
     finally:

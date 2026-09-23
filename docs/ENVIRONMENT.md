@@ -24,13 +24,16 @@ the operational need justifies it.
 
 ## Configuration Sources
 
-Configuration has three categories:
+Configuration has four categories:
 
 1. **Secrets** are injected as environment variables or Docker secrets.
 2. **Bootstrap settings** needed before the database can be read are supplied
    through environment variables.
 3. **Community settings** managed by the application are stored in SQLite and
    changed through authorized management commands where supported.
+4. **Automatic rank policy** is stored in `config/ranks.yaml`, mounted read-only
+   by Compose. Rank thresholds, activity gate and daily run time belong here,
+   not in `.env` or SQLite. Restart after changes; see [RANKS.md](RANKS.md).
 
 Environment variables are deployment inputs. A local `.env` file may be used
 for development or supplied to Compose through `env_file` in production, but

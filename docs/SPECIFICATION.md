@@ -61,9 +61,12 @@ data model should not unnecessarily prevent these capabilities.
 
 Clan rank assignment is separate from leaderboard placement.
 
-Ranks may be assigned from configurable rules using information such as
-membership duration, activity and participation. Rank evaluation must expose
-the reason for its result so managers can understand it.
+Automatic rules live in `config/ranks.yaml`. The regular ladder is Squire at
+1 calendar month of clan membership, Striker at 3, Ninja at 6, Inquisitor at 9,
+Expert at 12 and Paladin at 24. Promotion requires at least 1 total XP gained
+within the previous completed calendar month. Boss kills are not considered.
+The actual clan joining date is manager-maintained, never inferred from account
+link time. Rank evaluation exposes the calculation, activity gate and decision.
 
 A manager may override an automatically determined rank. An override takes
 precedence over automatic evaluation until it is removed or, if an expiry was
@@ -73,11 +76,20 @@ the effect of the override remains visible.
 Rank rules and the precise evaluation schedule remain configurable. Changes to
 rules must not silently remove active manual overrides.
 
+Evaluation runs daily at 03:00 community time by default. Tenure is measured on
+the evaluation date; the activity window is the preceding calendar month.
+Inactivity retains the assigned rank, missing/unreliable data defers promotion,
+and automation never demotes. Expiry/removal of an override retains the assigned
+rank until an eligible promotion. Moderator, Captain, Lieutenant and Commander
+are manual staff appointments outside the ladder and remain protected.
+These are application ranks only, not automatic changes to Discord or OSRS.
+See [RANKS.md](RANKS.md) for configuration, commands and evidence requirements.
+
 ## Activity and Monthly Leaderboard
 
-Implementation decision: leaderboard scoring and automatic rank assignment
-remain disabled until the community supplies its rules. Manual ranks remain
-available and do not grant manager access.
+Leaderboard scoring remains disabled until the community supplies its rules.
+Automatic membership ranks use the agreed XP-only activity gate above; they do
+not require or imply a leaderboard scoring formula.
 
 The application obtains OSRS activity data through Wise Old Man and uses it to
 produce a leaderboard for each calendar month.
@@ -237,7 +249,6 @@ decisions or audit history.
 The following intentionally remain undecided:
 
 - The leaderboard scoring formula.
-- The first set of automatic rank rules.
 - Whether members may self-link accounts and how ownership is verified.
 - Whether a member may have multiple OSRS accounts.
 - The precise treatment of OSRS name changes.

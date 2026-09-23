@@ -18,7 +18,7 @@ class Database:
         self.connection.execute("PRAGMA foreign_keys=ON")
         self.connection.execute("PRAGMA journal_mode=WAL")
         version = self.connection.execute("PRAGMA user_version").fetchone()[0]
-        if version > 5:
+        if version > 6:
             self.connection.close()
             raise ValueError("Database schema is newer than this application")
         if version == 0:
@@ -88,6 +88,23 @@ class Database:
                     message TEXT NOT NULL, attempts INTEGER NOT NULL DEFAULT 0,
                     next_attempt REAL NOT NULL DEFAULT 0, delivered_at TEXT);
                 PRAGMA user_version=5;
+                COMMIT;
+            ''')
+
+        if version < 6:
+            self.connection.executescript('''
+                BEGIN;
+                ALTER TABLE members ADD COLUMN joined_on TEXT;
+                CREATE TABLE member_ranks (
+                    discord_id TEXT PRIMARY KEY REFERENCES members(discord_id),
+                    assigned TEXT, calculated TEXT, evaluated_at TEXT, explanation TEXT);
+                INSERT INTO member_ranks(discord_id,assigned)
+                    SELECT discord_id,rank FROM rank_overrides;
+                CREATE TABLE rank_evaluations (
+                    id INTEGER PRIMARY KEY, at TEXT NOT NULL, actor TEXT NOT NULL,
+                    discord_id TEXT NOT NULL REFERENCES members(discord_id),
+                    fingerprint TEXT NOT NULL UNIQUE, details TEXT NOT NULL);
+                PRAGMA user_version=6;
                 COMMIT;
             ''')
 
