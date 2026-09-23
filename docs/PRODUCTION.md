@@ -30,6 +30,8 @@ clan joining dates, assigned/calculated ranks and evaluation history. Back up
 SQLite before upgrading and back up the policy file alongside it. See
 [RANKS.md](RANKS.md) for a preview-first rollout and data prerequisites.
 The health check monitors both the competition and rank worker tasks.
+Schema version 7 adds durable rank-run summaries for moderator review. Batch
+rank updates and their report commit together; back up SQLite before upgrading.
 
 ## Deployment Model
 

@@ -189,6 +189,9 @@ temporarily open bot access to everyone.
 - `/member-joined` records a member's actual clan joining date.
 - `/rank-rules` displays the file-based rules and daily schedule.
 - `/rank-preview` explains an individual decision without applying it.
+- `/rank-dry-run` previews all active linked members without applying changes.
+- `/rank-summary` shows saved automatic run results; `last_upgrade:true` selects
+  the last run with rank changes. Use `page` for additional members.
 - `/rank-evaluate` applies the same evaluation used by the daily scheduler.
   See [RANKS.md](RANKS.md) for activity gates, protected staff and override behavior.
 

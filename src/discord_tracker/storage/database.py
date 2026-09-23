@@ -18,7 +18,7 @@ class Database:
         self.connection.execute("PRAGMA foreign_keys=ON")
         self.connection.execute("PRAGMA journal_mode=WAL")
         version = self.connection.execute("PRAGMA user_version").fetchone()[0]
-        if version > 6:
+        if version > 7:
             self.connection.close()
             raise ValueError("Database schema is newer than this application")
         if version == 0:
@@ -105,6 +105,16 @@ class Database:
                     discord_id TEXT NOT NULL REFERENCES members(discord_id),
                     fingerprint TEXT NOT NULL UNIQUE, details TEXT NOT NULL);
                 PRAGMA user_version=6;
+                COMMIT;
+            ''')
+
+        if version < 7:
+            self.connection.executescript('''
+                BEGIN;
+                CREATE TABLE rank_runs (
+                    id INTEGER PRIMARY KEY, at TEXT NOT NULL, actor TEXT NOT NULL,
+                    changed INTEGER NOT NULL, report TEXT NOT NULL);
+                PRAGMA user_version=7;
                 COMMIT;
             ''')
 

@@ -123,6 +123,7 @@ class Ranks:
             assigned = calculated
             reason = 'Promoted: membership milestone reached and monthly XP activity confirmed'
         return {'discord_id': member['discord_id'], 'player_id': member['player_id'],
+                'display_name': member['display_name'], 'username': member['username'],
                 'joined_on': member['joined_on'], 'evaluated_on': today.isoformat(),
                 'timezone': timezone, 'period_start': start.isoformat(), 'period_end': end.isoformat(),
                 'rules_hash': self.rules.digest, 'rules': json.loads(self.rules.document),
@@ -160,23 +161,41 @@ class Ranks:
                     row['data'] = [m for m in raw['data'] if isinstance(m, dict) and m.get('metric') == 'overall']
                 result = self.decide(member, row, instant, timezone, preview=preview)
                 results.append(result)
-                if not preview:
-                    self.persist(actor, result)
+            if not preview:
+                # Apply the entire batch and its report atomically. No successful
+                # report can describe only a partially committed run.
+                with self.db.connection:
+                    for result in results:
+                        self.persist(actor, result)
+                    report = {'at': instant.isoformat(), 'period_start': start.isoformat(),
+                              'period_end': end.isoformat(), 'rules_hash': self.rules.digest,
+                              'results': results}
+                    self.db.connection.execute('INSERT INTO rank_runs(at,actor,changed,report) VALUES(?,?,?,?)',
+                        (now(), str(actor), sum(r['previous'] != r['assigned'] for r in results), json.dumps(report)))
             return results
 
+    def last_run(self, last_upgrade=False):
+        query = "SELECT * FROM rank_runs WHERE actor='scheduler'"
+        if last_upgrade:
+            query += ' AND changed > 0'
+        row = self.db.connection.execute(query + ' ORDER BY id DESC LIMIT 1').fetchone()
+        if row is None:
+            raise ValueError('No recorded automatic run with upgrades yet' if last_upgrade else 'No automatic run summary recorded yet')
+        return row['id'], json.loads(row['report'])
+
     def persist(self, actor, result):
+        """Called inside evaluate's batch transaction; must not commit individually."""
         details = json.dumps(result, sort_keys=True)
         fingerprint = hashlib.sha256(details.encode()).hexdigest()
-        with self.db.connection:
-            self.db.connection.execute('''INSERT OR IGNORE INTO rank_evaluations
-                (at,actor,discord_id,fingerprint,details) VALUES(?,?,?,?,?)''',
-                (now(), str(actor), result['discord_id'], fingerprint, details))
-            self.db.connection.execute('''INSERT INTO member_ranks
-                (discord_id,assigned,calculated,evaluated_at,explanation) VALUES(?,?,?,?,?)
-                ON CONFLICT(discord_id) DO UPDATE SET assigned=excluded.assigned,
-                calculated=excluded.calculated,evaluated_at=excluded.evaluated_at,explanation=excluded.explanation''',
-                (result['discord_id'], result['assigned'], result['calculated'], now(), result['reason']))
-            if result['previous'] != result['assigned']:
-                self.db.connection.execute('INSERT INTO audit(at,actor,action,target,outcome) VALUES(?,?,?,?,?)',
-                    (now(), str(actor), 'rank-automatic', result['discord_id'],
-                     f"{result['previous']} -> {result['assigned']}; {result['reason']}; rules={self.rules.digest}"))
+        self.db.connection.execute('''INSERT OR IGNORE INTO rank_evaluations
+            (at,actor,discord_id,fingerprint,details) VALUES(?,?,?,?,?)''',
+            (now(), str(actor), result['discord_id'], fingerprint, details))
+        self.db.connection.execute('''INSERT INTO member_ranks
+            (discord_id,assigned,calculated,evaluated_at,explanation) VALUES(?,?,?,?,?)
+            ON CONFLICT(discord_id) DO UPDATE SET assigned=excluded.assigned,
+            calculated=excluded.calculated,evaluated_at=excluded.evaluated_at,explanation=excluded.explanation''',
+            (result['discord_id'], result['assigned'], result['calculated'], now(), result['reason']))
+        if result['previous'] != result['assigned']:
+            self.db.connection.execute('INSERT INTO audit(at,actor,action,target,outcome) VALUES(?,?,?,?,?)',
+                (now(), str(actor), 'rank-automatic', result['discord_id'],
+                 f"{result['previous']} -> {result['assigned']}; {result['reason']}; rules={self.rules.digest}"))

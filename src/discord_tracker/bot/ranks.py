@@ -2,6 +2,9 @@ import time
 from datetime import datetime
 
 import discord
+from datetime import UTC
+from discord_tracker.rank_rules import previous_month
+from discord_tracker.bot.rank_reports import report_page
 
 
 def describe(result):
@@ -14,6 +17,28 @@ def describe(result):
 
 
 def register(bot, guild, reply):
+    @bot.tree.command(name='rank-dry-run', description='Manager: preview automatic ranks for all active linked members', guild=guild)
+    async def dry_run(interaction: discord.Interaction, page: int = 1):
+        if not await bot.authorize(interaction, True):
+            return
+        async def operation():
+            instant = datetime.now(UTC)
+            results = await bot.ranks.evaluate(interaction.user.id, preview=True, instant=instant)
+            start, end = previous_month(instant, bot.db.settings().get('COMMUNITY_TIMEZONE', 'Europe/Amsterdam'))
+            report = {'at': instant.isoformat(), 'period_start': start.isoformat(), 'period_end': end.isoformat(),
+                      'rules_hash': bot.ranks.rules.digest, 'results': results}
+            return report_page(report, page, title='DRY RUN: proposed changes only (as if enabled). Nothing applied.')
+        await reply(interaction, operation)
+
+    @bot.tree.command(name='rank-summary', description='Manager: review the last automatic run or last run with upgrades', guild=guild)
+    async def summary(interaction: discord.Interaction, page: int = 1, last_upgrade: bool = False):
+        if not await bot.authorize(interaction, True):
+            return
+        async def operation():
+            run_id, report = bot.ranks.last_run(last_upgrade)
+            return report_page(report, page, title=f'Automatic rank run #{run_id}: saved results (not a new evaluation).')
+        await reply(interaction, operation)
+
     @bot.tree.command(name='rank', description='View your assigned and calculated application clan rank', guild=guild)
     async def rank(interaction: discord.Interaction):
         if not await bot.authorize(interaction):

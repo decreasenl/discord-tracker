@@ -20,7 +20,7 @@ def test_member_lifecycle_and_settings(tmp_path):
     db.close()
     db = Database(tmp_path / 'test.sqlite3')
     assert db.settings()['COMMUNITY_TIMEZONE'] == 'UTC'
-    assert db.connection.execute('PRAGMA user_version').fetchone()[0] == 6
+    assert db.connection.execute('PRAGMA user_version').fetchone()[0] == 7
     db.close()
 
 
@@ -40,7 +40,7 @@ def test_upgrade_preserves_v1_members(tmp_path):
     db = Database(path)
     assert db.member(1)['linked_at'] == 'original-date'
     assert db.member(1)['archived_at'] is None
-    assert db.connection.execute('PRAGMA user_version').fetchone()[0] == 6
+    assert db.connection.execute('PRAGMA user_version').fetchone()[0] == 7
     db.close()
 
 

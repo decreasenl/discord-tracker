@@ -1,4 +1,5 @@
 from datetime import UTC, date, datetime
+from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import AsyncMock, Mock
 
@@ -168,6 +169,7 @@ def test_upgrade_preserves_expired_manual_rank(tmp_path):
     with db.connection:
         db.connection.execute("INSERT INTO rank_overrides VALUES('2','Captain','Staff','1',1)")
         db.connection.execute('DROP TABLE rank_evaluations')
+        db.connection.execute('DROP TABLE rank_runs')
         db.connection.execute('DROP TABLE member_ranks')
         db.connection.execute('ALTER TABLE members DROP COLUMN joined_on')
         db.connection.execute('PRAGMA user_version=5')
@@ -176,3 +178,57 @@ def test_upgrade_preserves_expired_manual_rank(tmp_path):
     assert db.member(2)['joined_on'] is None
     assert db.connection.execute('SELECT assigned FROM member_ranks').fetchone()[0] == 'Captain'
     db.close()
+
+
+async def test_dry_run_and_saved_summary(ranks):
+    from discord_tracker.bot.rank_reports import report_page
+    await ranks.evaluate(1, preview=True, instant=INSTANT)
+    assert ranks.db.connection.execute('SELECT count(*) FROM rank_runs').fetchone()[0] == 0
+    with pytest.raises(ValueError, match='No automatic run'):
+        ranks.last_run()
+    await ranks.evaluate(instant=INSTANT)
+    upgrade_id, report = ranks.last_run(True)
+    text = report_page(report, title='Saved summary')
+    assert 'Member / OSRS: player' in text
+    assert 'None -> Striker' in text
+    assert 'XP gained: 10' in text and len(text) < 1900
+    # A later no-op does not hide the last actual upgrade.
+    await ranks.evaluate(instant=INSTANT)
+    assert ranks.last_run()[0] > upgrade_id
+    assert ranks.last_run(True)[0] == upgrade_id
+    await ranks.evaluate(1, instant=INSTANT)
+    assert ranks.last_run(True)[0] == upgrade_id
+    # Report names/decisions are historical, not reconstructed from current members.
+    ranks.db.display_name(2, 'Renamed')
+    assert ranks.last_run(True)[1]['results'][0]['display_name'] == 'Member'
+    path = ranks.db.connection.execute('PRAGMA database_list').fetchone()[2]
+    reopened = Database(Path(path))
+    assert Ranks(reopened, ranks.wom, ranks.rules).last_run(True)[0] == upgrade_id
+    reopened.close()
+    with pytest.raises(ValueError, match='Page must'):
+        report_page(report, 2, title='Saved summary')
+
+
+async def test_run_rolls_back_if_persistence_fails(ranks, monkeypatch):
+    original = ranks.persist
+
+    def failing(actor, result):
+        original(actor, result)
+        raise RuntimeError('Simulated interruption before report save')
+
+    monkeypatch.setattr(ranks, 'persist', failing)
+    with pytest.raises(RuntimeError):
+        await ranks.evaluate(instant=INSTANT)
+    assert ranks.state(2)['assigned'] is None
+    assert ranks.db.connection.execute('SELECT count(*) FROM rank_runs').fetchone()[0] == 0
+    assert ranks.db.connection.execute('SELECT count(*) FROM rank_evaluations').fetchone()[0] == 0
+
+
+async def test_summary_pagination_and_empty_run(ranks):
+    from discord_tracker.bot.rank_reports import report_page
+    await ranks.evaluate(instant=INSTANT)
+    _, report = ranks.last_run()
+    report['results'] *= 5
+    assert 'Page 3/3' in report_page(report, 3, title='Summary')
+    report['results'] = []
+    assert '0 members' in report_page(report, title='Summary')

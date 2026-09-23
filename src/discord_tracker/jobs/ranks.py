@@ -29,7 +29,7 @@ class RankWorker:
             self.bot.db.setting('scheduler', 'RANK_LAST_RUN', key)
             log.info('Rank evaluation completed: members=%s changed=%s deferred=%s', len(results), changed, deferred)
             if changed or deferred:
-                self.bot.alerts.enqueue(f'Rank evaluation: {changed} application rank change(s), {deferred} member(s) deferred. Use /rank-preview for details and /audit for changes. Discord and in-game roles unchanged.')
+                self.bot.alerts.enqueue(f'Rank evaluation: {changed} application rank change(s), {deferred} member(s) deferred. Use /rank-summary for saved per-member results, or /rank-summary last_upgrade:true for the last run with changes. Discord and in-game roles unchanged.')
         except Exception as exc:
             self.retry_after = instant + timedelta(hours=1)
             log.error('Rank evaluation failed (%s)', type(exc).__name__)

@@ -88,6 +88,33 @@ relinked during the API request, evaluation uses their current record afterward.
 
 ## Production rollout
 
+### Dry runs and moderator review
+
+- `/rank-dry-run` previews all active linked members, even with `enabled: false`.
+  It uses the real evaluation rules and fresh WOM data but writes no ranks,
+  evaluation history, run reports or scheduler progress. Normal command auditing
+  still applies. The command does not pause an independently enabled scheduler.
+- `/rank-summary` displays the last successfully committed automatic run.
+- `/rank-summary last_upgrade:true` displays the last automatic run containing
+  rank changes, even when a later daily run changed nobody.
+- Use `page:2`, etc., to review additional members. Changes appear first, followed
+  by deferred and unchanged/held members. Each entry includes the Discord name
+  and ID, OSRS name, previous/new/calculated ranks, joining date, XP and reason.
+  The header includes totals, evaluation time, activity period and policy hash.
+- Replies are manager-only and private. Saved summaries survive restarts and
+  retain names/evidence as they were at evaluation time; they do not re-fetch WOM.
+  Each dry-run page request performs a fresh preview, so results may change if
+  members or upstream data change between requests.
+
+Schema version 7 stores each applied batch and its report atomically. Failed
+batches roll back rank updates and do not replace the last successful summary.
+Manual evaluations and dry runs do not replace the last automatic summary.
+No summaries are reconstructed for runs predating this migration; the command
+reports that none is available until an automatic evaluation completes.
+Alert-channel notifications point managers to `/rank-summary` for review.
+
+### Rollout steps
+
 1. Back up SQLite before the version-6 migration. Existing manual rank labels
    are preserved as assigned ranks, including expired overrides.
 2. For a preview-only rollout, set `enabled: false` and rebuild/recreate with
