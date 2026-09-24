@@ -66,6 +66,27 @@ class WiseOldMan:
             result[player_id] = row
         return result
 
+    async def group_members(self, group_id):
+        group = await self.request('GET', f'groups/{group_id}')
+        memberships = group.get('memberships')
+        if not isinstance(memberships, list):
+            raise IntegrationError('Wise Old Man returned an invalid group member list')
+        players = []
+        ids, names = set(), set()
+        for membership in memberships:
+            player = membership.get('player') if isinstance(membership, dict) else None
+            player_id = player.get('id') if isinstance(player, dict) else None
+            username = player.get('username') if isinstance(player, dict) else None
+            if type(player_id) is not int or not isinstance(username, str) or not username.strip():
+                raise IntegrationError('Wise Old Man returned an invalid group member')
+            key = ' '.join(username.split()).casefold()
+            if player_id in ids or key in names:
+                raise IntegrationError('Wise Old Man returned duplicate group members')
+            ids.add(player_id)
+            names.add(key)
+            players.append(player)
+        return players
+
     async def group_competitions(self, group_id):
         records = {}
         # Exhaust the bounded search before declaring a match unique.

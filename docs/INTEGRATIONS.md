@@ -96,7 +96,10 @@ provides one.
 
 ### Permissions
 
-The bot should request only the gateway intents and guild permissions required
+The bot requests Guilds and the privileged Server Members intent. Server Members
+is required to enumerate bot-access/manager role holders for preview-first bulk
+linking and read their server-specific display names. Presence and Message
+Content are not requested. The bot should request only gateway intents and guild permissions required
 by implemented features. Command visibility may improve the user experience,
 but authorization for management actions must always be checked by the
 application when a command is executed. The manager role grants normal access

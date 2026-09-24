@@ -1,7 +1,7 @@
 # Setup and verification
 
 Implemented: Discord Gateway connection, server/role authorization, SQLite
-bootstrap and schema versioning, explicit account linking, statistics retrieval,
+bootstrap and schema versioning, explicit and preview-first bulk account linking, statistics retrieval,
 manual refresh, read-only diagnostics, audit records and operator backup/recovery.
 
 Also implemented: archival/restoration/relinking with retained history, settings
@@ -16,7 +16,7 @@ remains disabled. Live Docker/Discord/Wise Old Man verification is still require
 before production use.
 The other product documents describe the target application, not a claim that
 all features already exist. This milestone supports one OSRS account per member
-and manager-created links only. Existing OSRS players must be tracked in Wise
+and manager-approved links only. Existing OSRS players must be tracked in Wise
 Old Man before linking.
 
 ## Create the Discord application
@@ -24,8 +24,9 @@ Old Man before linking.
 1. Open the [Discord Developer Portal](https://discord.com/developers/applications)
    and create an application. Use a test server for the first run.
 2. On its **Bot** page, generate/reset the bot token and save it privately.
-   Leave privileged intents disabled; this milestone uses guild events and
-   the member information supplied with commands. Never paste the token in chat.
+   Under **Privileged Gateway Intents**, enable **Server Members Intent**. Bulk
+   member linking enumerates members and reads their server display names.
+   Leave Presence and Message Content disabled. Never paste the token in chat.
 3. Under **Installation**, enable **Guild Install**. Select the `bot` and
    `applications.commands` scopes. Grant **View Channels** and **Send Messages**
    for the test channel. Also grant **Read Message History** in event channels
@@ -119,6 +120,22 @@ that the application denies; server integration settings can further control
 their visibility.
 
 If a player is missing, start tracking them on Wise Old Man and retry the link.
+
+Managers can bulk-match server profiles against the configured WOM group:
+
+```text
+/member-sync
+/member-sync apply:true
+```
+
+The first command is a dry run. Review every page using `page:2`, etc. The apply
+form creates only unambiguous links and never replaces an existing link. The
+member must hold the bot-access or manager role. Matching collapses repeated
+whitespace and selects the longest WOM username at the beginning of the server
+display name. A second account may follow punctuation (`|`, `/`, comma, bullet,
+or spaced dash) or two or more spaces; only the first account is linked.
+Unmatched profiles, duplicate claims, archived records and existing mismatched
+links are reported for manual `/link`, `/restore` or `/relink` resolution.
 An API lookup returns upstream data as it exists; `/refresh` explicitly requests
 an update. Concurrent refreshes for one player share the same request. This
 milestone enforces a 60-second in-process refresh cooldown, which resets after a

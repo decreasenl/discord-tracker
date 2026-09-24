@@ -8,6 +8,7 @@ from discord_tracker.config import bootstrap_settings
 from discord_tracker.bot.permissions import permitted
 from discord_tracker.integrations.wise_old_man import WiseOldMan, IntegrationError
 from discord_tracker.services.members import Members
+from discord_tracker.services.member_sync import MemberSync
 from discord_tracker.services.competitions import Competitions
 from discord_tracker.jobs.competitions import CompetitionWorker
 from discord_tracker.services.alerts import Alerts
@@ -31,6 +32,7 @@ class Tracker(discord.Client):
     def __init__(self, config, db):
         intents = discord.Intents.none()
         intents.guilds = True
+        intents.members = True
         super().__init__(intents=intents, allowed_mentions=discord.AllowedMentions.none())
         self.config, self.db = config, db
         self.settings = db.settings()
@@ -42,6 +44,7 @@ class Tracker(discord.Client):
         self.rank_worker = RankWorker(self)
         self.rank_task = None
         self.members_service = Members(db, self.wom)
+        self.member_sync = MemberSync(db, self.wom)
         self.heartbeat = None
         self.ready_for_commands = False
         self.diagnostic_times = {}
@@ -125,6 +128,8 @@ class Tracker(discord.Client):
         register_events(self, guild, reply)
         from discord_tracker.bot.ranks import register as register_ranks
         register_ranks(self, guild, reply)
+        from discord_tracker.bot.member_sync import register as register_member_sync
+        register_member_sync(self, guild, reply)
 
         @self.tree.command(name='status', description='Check bot readiness', guild=guild)
         async def status(interaction: discord.Interaction):
