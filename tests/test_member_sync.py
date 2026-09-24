@@ -1,7 +1,7 @@
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 
-from discord_tracker.services.member_sync import MemberSync, first_group_player, normalized
+from discord_tracker.services.member_sync import MemberSync, first_group_player, listed_names, normalized
 from discord_tracker.storage.database import Database
 
 
@@ -21,8 +21,11 @@ def test_first_name_matching_and_whitespace():
     for display in ('Su Do | Segx', 'su   do / Segx', 'Su Do, Segx', 'Su Do • Segx', 'Su Do  Segx', 'Su Do - Segx'):
         assert first_group_player(display, PLAYERS)['id'] == 1
     assert first_group_player('Segx | Su Do', PLAYERS)['id'] == 3
-    assert first_group_player('Unrelated | Su Do', PLAYERS) is None
-    # One ordinary space can still be part of a longer OSRS name, so it is not a delimiter.
+    assert first_group_player('Unrelated | Su Do', PLAYERS)['id'] == 1
+    assert first_group_player('Just_Woolsey/Woolseyy', PLAYERS + [{'id': 4, 'username': 'Woolseyy'}])['id'] == 4
+    assert first_group_player('Unknown | Segx / Su Do', PLAYERS)['id'] == 3
+    assert listed_names(r'First\Second, Third • Fourth') == ['First', 'Second', 'Third', 'Fourth']
+    # Whitespace remains part of an OSRS name rather than a delimiter.
     assert first_group_player('Su SomeoneElse', PLAYERS) is None
 
 

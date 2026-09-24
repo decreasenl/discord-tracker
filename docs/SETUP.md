@@ -132,9 +132,11 @@ The first command is a dry run. Review every page using `page:2`, etc. The apply
 form creates only unambiguous links and never replaces an existing link. The
 manager-only command inspects every non-bot server member; members do not need
 the bot-access role to be linked. Matching collapses repeated whitespace and
-selects the longest WOM username at the beginning of the server display name.
-A second account may follow punctuation (`|`, `/`, comma, bullet, or spaced
-dash) or two or more spaces; only the first account is linked.
+checks delimiter-separated profile names from left to right and selects the first
+one that exactly exists in the WOM group. Separators include `|`, `/`, comma,
+semicolon, backslash, bullet, or spaced dash. Repeated whitespace inside a name
+is normalized. Thus a Discord
+alias may precede the OSRS name; only the first valid WOM match is linked.
 Unmatched profiles, duplicate claims, archived records and existing mismatched
 links are reported for manual `/link`, `/restore` or `/relink` resolution.
 An API lookup returns upstream data as it exists; `/refresh` explicitly requests

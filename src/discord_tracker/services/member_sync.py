@@ -6,33 +6,37 @@ def normalized(value):
     return ' '.join(value.split())
 
 
-def first_group_player(display_name, players):
-    """Find the longest WOM username at the beginning of a server display name.
+def listed_names(display_name):
+    # Underscores and unspaced hyphens may be part of a RuneScape-style name,
+    # so only split on unambiguous separators. Whitespace inside each candidate
+    # is normalized afterwards.
+    parts = re.split(r'(?:[|/,;\\•·]+|\s+[\-–—]\s+)', display_name.strip())
+    candidates = []
+    for part in parts:
+        whole = normalized(part)
+        if not whole:
+            continue
+        candidates.append(whole)
+        # Prefer the complete normalized value, allowing repeated whitespace
+        # inside an OSRS name. If that is not a WOM member, these alternatives
+        # also support repeated whitespace being used as a delimiter.
+        if re.search(r'\s{2,}', part):
+            candidates.extend(normalized(piece) for piece in re.split(r'\s{2,}', part) if normalized(piece))
+    return candidates
 
-    Whitespace inside an OSRS name is flexible. A following name must be
-    separated by punctuation or at least two whitespace characters.
-    """
-    display = display_name.strip()
-    matches = []
+
+def first_group_player(display_name, players):
+    """Return the first listed profile name that exactly matches the WOM group."""
+    by_name = {}
     for player in players:
-        username = normalized(player['username'])
-        pattern = r'^\s*' + r'\s+'.join(re.escape(part) for part in username.split()) + r'(?P<rest>.*)$'
-        found = re.match(pattern, display, flags=re.IGNORECASE)
-        if not found:
-            continue
-        rest = found.group('rest')
-        if not rest.strip():
-            matches.append((len(username), player))
-            continue
-        leading = len(rest) - len(rest.lstrip())
-        first = rest.lstrip()[0]
-        if leading >= 2 or not first.isalnum():
-            matches.append((len(username), player))
-    if not matches:
-        return None
-    longest = max(length for length, _ in matches)
-    winners = [player for length, player in matches if length == longest]
-    return winners[0] if len(winners) == 1 else None
+        by_name.setdefault(normalized(player['username']).casefold(), []).append(player)
+    for candidate in listed_names(display_name):
+        matches = by_name.get(candidate.casefold(), [])
+        if len(matches) == 1:
+            return matches[0]
+        if len(matches) > 1:
+            return None
+    return None
 
 
 class MemberSync:
@@ -45,7 +49,7 @@ class MemberSync:
         for member in discord_members:
             player = first_group_player(member.display_name, players)
             item = {'discord_id': str(member.id), 'display_name': member.display_name,
-                    'player': player, 'status': 'unmatched', 'detail': 'No WOM group username matches the first profile name'}
+                    'player': player, 'status': 'unmatched', 'detail': 'No listed profile name exactly matches a WOM group username'}
             if player:
                 existing = self.db.member(member.id)
                 owner = self.db.connection.execute('SELECT discord_id,archived_at FROM members WHERE player_id=?',

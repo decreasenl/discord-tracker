@@ -52,8 +52,8 @@ The application must support:
 - Linking and correcting Discord and OSRS identities.
 - Retaining historical activity and event results when a member is archived.
 - Tracking the date from which clan membership duration is calculated.
-- Manager-previewed bulk linking by matching the first server-profile name to
-  an exact member of the configured Wise Old Man group. It considers every
+- Manager-previewed bulk linking by matching delimiter-separated server-profile
+  names from left to right to an exact configured Wise Old Man group member. It considers every
   non-bot server member independently of command-access roles. Ambiguous matches
   and existing links require manual resolution and are never overwritten.
 
