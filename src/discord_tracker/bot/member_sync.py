@@ -1,8 +1,6 @@
 import math
 import discord
 
-from discord_tracker.bot.permissions import permitted
-
 
 def safe(value, limit=48):
     value = ' '.join(str(value).split())[:limit]
@@ -41,10 +39,7 @@ def register(bot, guild, reply):
                 raise ValueError('Configure the Wise Old Man group with /set-group first')
             candidates = []
             async for member in interaction.guild.fetch_members(limit=None):
-                if member.bot:
-                    continue
-                roles = [role.id for role in member.roles]
-                if permitted(bot.settings, interaction.guild_id, roles):
+                if not member.bot:
                     candidates.append(member)
             results = await bot.member_sync.plan(candidates, int(group_id))
             applied = bot.member_sync.apply(interaction.user.id, results) if apply else 0

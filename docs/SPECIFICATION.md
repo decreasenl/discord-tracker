@@ -53,8 +53,9 @@ The application must support:
 - Retaining historical activity and event results when a member is archived.
 - Tracking the date from which clan membership duration is calculated.
 - Manager-previewed bulk linking by matching the first server-profile name to
-  an exact member of the configured Wise Old Man group. Ambiguous matches and
-  existing links require manual resolution and are never overwritten.
+  an exact member of the configured Wise Old Man group. It considers every
+  non-bot server member independently of command-access roles. Ambiguous matches
+  and existing links require manual resolution and are never overwritten.
 
 Account ownership verification, support for multiple OSRS accounts per member
 and name-change handling require product decisions before implementation. The
